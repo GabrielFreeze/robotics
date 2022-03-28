@@ -1,0 +1,7 @@
+{
+    "board": "arduino:avr:unowifi",
+    "programmer": "arduino:avrisp",
+    "port": "COM5",
+    "sketch": "driver\\driver.ino",
+    "output": "..\\ArduinoOutput"
+}
