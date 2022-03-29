@@ -1,6 +1,9 @@
 #pragma once
+#include "MPU6050_getdata.h"
+
 #include <arduino.h>
 
+//#include <avr/wdt.h>
 
 #define ACT 3 //Activate Movement
 
@@ -15,9 +18,14 @@
 #define LNTRK_M A1 //Line Tracking Module Middle Sensor
 #define LNTRK_R A0 //Line Tracking Module Right Sensor
 
+#define FWD 1
+#define BCK 0
+
 class BBI {
   public:
     BBI();
+    void initMPU();
+    
     void power(bool state);
     void halt();
     void rightMotor(int speed, bool fwd, int time);
@@ -28,7 +36,11 @@ class BBI {
     int getLntrkMiddle();
     int getLntrkRight();
 
+    float getYaw();
 
+    MPU6050_getdata mpu;
+
+  
   private:
   
   
