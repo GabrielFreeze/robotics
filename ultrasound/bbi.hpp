@@ -18,8 +18,6 @@
 #define LNTRK_M A1 //Line Tracking Module Middle Sensor
 #define LNTRK_R A0 //Line Tracking Module Right Sensor
 
-#define BASE_SPEED 75 //Ir-robot nagħmluh jitħarrek bi PWM ta 75 dejjem. Biex ikun inqas ikkumplikat.
-
 #define FWD 1
 #define BCK 0
 
@@ -30,12 +28,9 @@ class BBI {
     
     void power(bool state);
     void halt();
-
-    
-    void moveMotors(int leftSpeed, int rightSpeed, bool direction=true);
-    void moveFwd(int distance);
-    void rotate(int angle);
-    
+    void rightMotor(int speed, bool fwd, int time);
+    void leftMotor(int speed, bool fwd, int time);
+    void moveMotor(int speed, bool fwd, int time);
 
     float rl(float init_yaw);
     int getLntrkLeft();

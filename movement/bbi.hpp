@@ -1,9 +1,7 @@
 #pragma once
 #include "MPU6050_getdata.h"
-
+#include <HCSR04.h>
 #include <arduino.h>
-
-//#include <avr/wdt.h>
 
 #define ACT 3 //Activate Movement
 
@@ -13,6 +11,8 @@
 #define RIGHT_PWM 5 //Right Motor Speed
 #define RIGHT_DIR 7 //Right Motor Direction
 
+#define SONIC_TRIG 13 //UltraSonic Sensor
+#define SONIC_ECHO 12 //UltraSonic Sensor
 
 #define LNTRK_L A2 //Line Tracking Module Left Sensor
 #define LNTRK_M A1 //Line Tracking Module Middle Sensor
@@ -42,9 +42,13 @@ class BBI {
     int getLntrkMiddle();
     int getLntrkRight();
 
+    int getSonicDist();
+
     float getYaw();
 
     MPU6050_getdata mpu;
+    
+
 
 
     int motorSpeedLeft;

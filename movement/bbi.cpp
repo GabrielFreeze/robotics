@@ -1,5 +1,7 @@
 #include "bbi.hpp"
 
+HCSR04 hc(SONIC_TRIG, SONIC_ECHO);
+
 float BBI::getYaw() {
   float yaw = 0;
   mpu.MPU6050_dveGetEulerAngles(&yaw);
@@ -11,6 +13,7 @@ void BBI::initMPU() {
   delay(2000);
   mpu.MPU6050_calibration();
 }
+
 
 BBI::BBI() {
   pinMode(ACT, OUTPUT);
@@ -24,10 +27,6 @@ BBI::BBI() {
   pinMode(LNTRK_L, INPUT);
   pinMode(LNTRK_M, INPUT);
   pinMode(LNTRK_R, INPUT);
-  
-  
-  
-
 };
 
 void BBI::power(bool state) {
@@ -49,7 +48,7 @@ void BBI::moveMotors(int leftSpeed, int rightSpeed, bool direction) {
 void BBI::moveFwd(int distance) {
   //Distance in cm. Għalissa għamlu jimxi dritt indefinetly.
 
-  int yaw_intial = getYaw();
+  int yaw_initial = getYaw();
 
   while (true) { //Imbagħad inbiddluwa while distance is not reached. Tagħtix kas għalissa.
 
@@ -71,19 +70,22 @@ void BBI::moveFwd(int distance) {
   
 }
 
-void BBI:rotate(int angle) {
+void BBI::rotate(int angle) {
   //Angle in degrees
 
-  //Goal: Robot should rotate <angle> degrees clockwise from current configuration
-
-  int yaw_intial = getYaw();
-  int rotate_pwm = 75; //Make sure the speed is slow enough such that the yaw updates correctly.
+  angle = round(angle);
+  int yaw_initial = round(getYaw());
   
-  while (getYaw() == yaw_initial+angle) {
+  int rotate_pwm = 60; //Make sure the speed is slow enough such that the yaw updates correctly.
+  
+  while (round(getYaw()) != yaw_initial+angle) {
+    
     //In order for the robot to rotate on itself. The left and right must be reversed.
-    digitalWrite(LEFT_DIR, HIGH);
-    digitalWrite(RIGHT_DIR, LOW);
-
+    
+    digitalWrite(LEFT_DIR, angle>0? HIGH:LOW);
+    digitalWrite(RIGHT_DIR, angle>0? LOW:HIGH);
+    
+    Serial.println(getYaw());
     //Rotate bbi.
     analogWrite(LEFT_PWM, rotate_pwm);
     analogWrite(RIGHT_PWM, rotate_pwm);
@@ -106,6 +108,10 @@ int BBI::getLntrkMiddle() {
 }
 int BBI::getLntrkRight() {
   return analogRead(LNTRK_R);
+}
+
+int BBI::getSonicDist() {
+  return hc.dist();
 }
 
 
