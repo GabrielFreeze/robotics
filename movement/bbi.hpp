@@ -1,6 +1,8 @@
 #pragma once
+
 #include "MPU6050_getdata.h"
 #include <HCSR04.h>
+
 #include <arduino.h>
 
 #define ACT 3 //Activate Movement
@@ -14,11 +16,14 @@
 #define SONIC_TRIG 13 //UltraSonic Sensor
 #define SONIC_ECHO 12 //UltraSonic Sensor
 
+#define IR_RECV_PIN 9 //Infrared Remote
+
 #define LNTRK_L A2 //Line Tracking Module Left Sensor
 #define LNTRK_M A1 //Line Tracking Module Middle Sensor
 #define LNTRK_R A0 //Line Tracking Module Right Sensor
 
 #define BASE_SPEED 75 //Ir-robot nagħmluh jitħarrek bi PWM ta 75 dejjem. Biex ikun inqas ikkumplikat.
+
 
 #define FWD 1
 #define BCK 0
@@ -31,10 +36,9 @@ class BBI {
     void power(bool state);
     void halt();
 
-    
+    bool moveFwd(int distance);
     void moveMotors(int leftSpeed, int rightSpeed, bool direction=true);
-    void moveFwd(int distance);
-    void rotate(int angle);
+    bool rotate(int angle);
     
 
     float rl(float init_yaw);
@@ -47,7 +51,7 @@ class BBI {
     float getYaw();
 
     MPU6050_getdata mpu;
-    
+    bool IR_halt();
 
 
 

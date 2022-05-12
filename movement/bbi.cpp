@@ -1,6 +1,9 @@
 #include "bbi.hpp"
+#include <IRremote.h>
 
 HCSR04 hc(SONIC_TRIG, SONIC_ECHO);
+IRrecv irrecv(IR_RECV_PIN);
+decode_results results;
 
 float BBI::getYaw() {
   float yaw = 0;
@@ -10,7 +13,7 @@ float BBI::getYaw() {
 
 void BBI::initMPU() {
   mpu.MPU6050_dveInit();
-  delay(2000);
+  delay(2500);
   mpu.MPU6050_calibration();
 }
 
@@ -18,20 +21,37 @@ void BBI::initMPU() {
 BBI::BBI() {
   pinMode(ACT, OUTPUT);
 
+
   pinMode(RIGHT_DIR, OUTPUT);
   pinMode(RIGHT_PWM, OUTPUT);
 
   pinMode(LEFT_DIR, OUTPUT);
   pinMode(LEFT_PWM, OUTPUT);
-
   pinMode(LNTRK_L, INPUT);
   pinMode(LNTRK_M, INPUT);
   pinMode(LNTRK_R, INPUT);
+
+  irrecv.enableIRIn();
+  
 };
+
+bool BBI::IR_halt() {
+   
+//   if (irrecv.decode(&results)) {
+//    Serial.println("IR code received. Halting BBI...");
+//    halt();
+//    irrecv.resume();
+//    return true;
+//  }
+
+  return true;
+}
+
 
 void BBI::power(bool state) {
   digitalWrite(ACT, HIGH);
 };
+
 
 void BBI::moveMotors(int leftSpeed, int rightSpeed, bool direction) {
 
@@ -41,51 +61,71 @@ void BBI::moveMotors(int leftSpeed, int rightSpeed, bool direction) {
 
   //Apply the PWM
   analogWrite(LEFT_PWM, leftSpeed);
-  analogWrite(LEFT_PWM, rightSpeed);
+  analogWrite(RIGHT_PWM, rightSpeed);
   
 }
 
-void BBI::moveFwd(int distance) {
+bool BBI::moveFwd(int distance) {
   //Distance in cm. Għalissa għamlu jimxi dritt indefinetly.
 
-  int yaw_initial = getYaw();
+  float yaw_initial = getYaw();
 
   while (true) { //Imbagħad inbiddluwa while distance is not reached. Tagħtix kas għalissa.
 
-    int yaw_difference = getYaw() - yaw_initial;
+    if (IR_halt())
+      return false;
 
-    int left_offset = /*Uża il-yaw difference biex tikkalulah*/ 0;
-    int right_offset = /*Uża il-yaw difference biex tikkalulah*/ 0;
 
+    
+    float yaw_difference = getYaw() - yaw_initial;
+    float left_offset  = 0;
+    float right_offset = 0;
+    const int KP = 10;
+    const int MAX_OFFSET = 50;
+    
+    /*Uża il-yaw difference biex tikkalulah*/
+    if (yaw_difference > 0) {
+      left_offset = constrain(yaw_difference*KP, 0, MAX_OFFSET);
+    }
+    else {
+      right_offset = constrain(-yaw_difference*KP, 0, MAX_OFFSET);
+    }
+  
     /*Jekk ir-robot irid jikser għax-xellug, left_offset irid ikun > 0, u right_offset irid ikun 0.
       Jekk ir-robot irid jikser għal-lemin, right_offset irid ikun > 0, u left_offset irid ikun 0.
       Aktar ma jkun għoli l-offset, aktar mhi ha tkun sharp il-kisra.
       The bigger the yaw difference, the bigger the offset.
       Meta il-yaw difference tkun 0, left_offset u right_offset it-tnejn ikunu 0.*/
 
+    Serial.print("Offset: "); Serial.println(yaw_difference>0?left_offset:-right_offset);
     
+    left_offset += 0.15*BASE_SPEED; //Hemm bias lejn il-lemin.
     moveMotors(BASE_SPEED - left_offset, BASE_SPEED - right_offset);
 
   }
   
 }
 
-void BBI::rotate(int angle) {
+bool BBI::rotate(int angle) {
+  
   //Angle in degrees
 
   angle = round(angle);
   int yaw_initial = round(getYaw());
   
-  int rotate_pwm = 60; //Make sure the speed is slow enough such that the yaw updates correctly.
+  int rotate_pwm = 100; //Make sure the speed is slow enough such that the yaw updates correctly.
   
   while (round(getYaw()) != yaw_initial+angle) {
+    
+    if (IR_halt())
+      return false;
     
     //In order for the robot to rotate on itself. The left and right must be reversed.
     
     digitalWrite(LEFT_DIR, angle>0? HIGH:LOW);
     digitalWrite(RIGHT_DIR, angle>0? LOW:HIGH);
     
-    Serial.println(getYaw());
+//    Serial.println(getYaw());
     //Rotate bbi.
     analogWrite(LEFT_PWM, rotate_pwm);
     analogWrite(RIGHT_PWM, rotate_pwm);
