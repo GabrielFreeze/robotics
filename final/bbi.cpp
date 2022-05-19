@@ -13,8 +13,10 @@ float BBI::getYaw() {
 
 void BBI::initMPU() {
   mpu.MPU6050_dveInit();
-  delay(1500);
+  delay(2500);
   mpu.MPU6050_calibration();
+  delay(1000);
+  initial_yaw = getYaw();
 }
 
 
@@ -33,6 +35,9 @@ BBI::BBI() {
 
   irrecv.enableIRIn();
   
+  looking = LOOKING_UP;
+  x = 7;
+  y = 0;
 };
 
 bool BBI::IR_halt() {
@@ -57,7 +62,6 @@ int BBI::onLine() {
 }
 
 
-
 void BBI::moveBlind(int speed, int time, bool direction) {
     
   //Set both motors' direction to the specified direction.
@@ -78,7 +82,6 @@ float BBI::speedTest(int speed) {
   //Distance in cm. Għalissa għamlu jimxi dritt indefinetly.
 
   float yaw_initial = getYaw();
-
 
   //Check if BBI is on line
   Serial.println("Place on starting line");
@@ -114,7 +117,7 @@ float BBI::speedTest(int speed) {
       The bigger the yaw difference, the bigger the offset.
       Meta il-yaw difference tkun 0, left_offset u right_offset it-tnejn ikunu 0.*/
 
-    Serial.print("Offset: "); Serial.println(yaw_difference>0?left_offset:-right_offset);
+//    Serial.print("Offset: "); Serial.println(yaw_difference>0?left_offset:-right_offset);
     
     left_offset += 0.15*BASE_SPEED; //Hemm bias lejn il-lemin.
     moveMotors(BASE_SPEED - left_offset, BASE_SPEED - right_offset);
@@ -155,12 +158,11 @@ bool BBI::evalCondition(condition_type condition) {
   
 }
 
-bool BBI::moveFwd(float distance, condition_type condition) {
+bool BBI::moveFwd(float distance, condition_type condition, bool avoid) {
   
   //Distance in cm. Għalissa għamlu jimxi dritt indefinetly.
 
-  float yaw_initial = getYaw();
-
+  float current_yaw = getYaw();
   float start_time = millis();
   float time_to_travel = distance * BASE_SPEED_MS;
 
@@ -168,7 +170,7 @@ bool BBI::moveFwd(float distance, condition_type condition) {
   
   while (millis() - start_time < time_to_travel && !evalCondition(condition)) { 
 
-    float yaw_difference = getYaw() - yaw_initial;
+    float yaw_difference = getYaw() - (avoid? current_yaw:initial_yaw);
     float left_offset  = 0;
     float right_offset = 0;
     const int KP = 10;
@@ -188,10 +190,13 @@ bool BBI::moveFwd(float distance, condition_type condition) {
       The bigger the yaw difference, the bigger the offset.
       Meta il-yaw difference tkun 0, left_offset u right_offset it-tnejn ikunu 0.*/
 
-    Serial.print("Offset: "); Serial.println(yaw_difference>0?left_offset:-right_offset);
+    if (avoid) {
+      moveMotors(BASE_SPEED, BASE_SPEED);
+    }
+    else {
+      moveMotors(BASE_SPEED, BASE_SPEED);  
+    }
     
-    left_offset += 0.15*BASE_SPEED; //Hemm bias lejn il-lemin.
-    moveMotors(BASE_SPEED - left_offset, BASE_SPEED - right_offset);
   }
 
   Serial.println("Halting because of condition");
@@ -232,38 +237,51 @@ void BBI::halt() {
 }
 
 void BBI::adjust() {
+
   int left   = getLntrkLeft();
   int middle = getLntrkMiddle();
   int right  = getLntrkRight();
-  
-  int left_right_diff = left-right;
-  
-  //Already straight  //TODO: LOOK INTO THIS. CHECK IF CONDITIONS ARE CORRECT ON WHATS ACTUALLY HAPPENING TO BBI
-  if (left_right_diff*left_right_diff < THRESH*THRESH) {
-    Serial.println("Str8");
-    return;
-  }
-  
-  //Robot is aligned to the right.
-  else if (left_right_diff > THRESH) {
-    Serial.println("Turning Left");
-    int left   = getLntrkLeft();
-    int right  = getLntrkRight();
 
-    rotate(-90, COND_IS_ALIGNED);
-    rotate(-5);
-    
+  moveInc(false);
 
-  }
-  //Robot is aligned to the left.
-  else {
-    Serial.println("Turning Right");
-    int left   = getLntrkLeft();
-    int right  = getLntrkRight();
+  rotate(180,COND_ONLINE);
+  rotate(-80);
+  
+  //Hey
 
-    rotate(90, COND_IS_ALIGNED);
-    rotate(5);
-  }
+
+  
+//  int left   = getLntrkLeft();
+//  int middle = getLntrkMiddle();
+//  int right  = getLntrkRight();
+//  
+//  int left_right_diff = left-right;
+//  
+//  if (abs(left_right_diff) < THRESH) {
+//    Serial.println("Str8");
+//    return;
+//  }
+//  
+//  //Robot is aligned to the right.
+//  else if (left_right_diff > THRESH) {
+//    Serial.println("Turning Left");
+//    int left   = getLntrkLeft();
+//    int right  = getLntrkRight();
+//
+//    rotate(-90, COND_IS_ALIGNED);
+//    rotate(-5);
+//    
+//
+//  }
+//  //Robot is aligned to the left.
+//  else {
+//    Serial.println("Turning Right");
+//    int left   = getLntrkLeft();
+//    int right  = getLntrkRight();
+//
+//    rotate(90, COND_IS_ALIGNED);
+//    rotate(5);
+//  }
   
 }
 
@@ -274,18 +292,59 @@ bool BBI::isAlignedOnLine() {
   return left > THRESH && right > THRESH;
 }
 
+bool BBI::rotClockInc(condition_type condition) {
+  looking = (looking+1)%4;
+  return rotate(INC_ROT, condition);
+}
+bool BBI::rotAntiInc(condition_type condition) {
+  looking = (looking-1)%4;
+  return rotate(-INC_ROT, condition);
+}
+bool BBI::moveInc(bool avoid, condition_type condition){
+  
+  switch (looking) {
+    case LOOKING_UP:    y++; break;
+    case LOOKING_RIGHT: x++; break;
+    case LOOKING_LEFT:  x--; break;
+    case LOOKING_DOWN:  y--; break;
+  }
+  
+  return moveFwd(INC, condition, avoid);
+}
 
-int BBI::getLntrkLeft() {
+bool BBI::addObject() {
+
+  switch (looking) {
+    case LOOKING_UP:    grid[y+1][x] = 1; break;
+    case LOOKING_RIGHT: grid[y][x+1] = 1; break;
+    case LOOKING_LEFT:  grid[y][x-1] = 1; break;
+    case LOOKING_DOWN:  grid[y-1][x] = 1; break;
+  }
+  
+}
+
+
+void BBI::getPath() {
+
+  
+}
+
+
+
+uint16_t BBI::getLntrkLeft() {
   return analogRead(LNTRK_L);
 }
-int BBI::getLntrkMiddle() {
+uint16_t BBI::getLntrkMiddle() {
   return analogRead(LNTRK_M);
 }
-int BBI::getLntrkRight() {
+uint16_t BBI::getLntrkRight() {
   return analogRead(LNTRK_R);
 }
 
-int BBI::getSonicDist() {
+uint16_t BBI::getSonicDist() {
+  Serial.println(hc.dist());
+  if (hc.dist() == 0)
+    return 1000;
   return hc.dist();
 }
 

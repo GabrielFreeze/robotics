@@ -25,17 +25,22 @@
 #define BASE_SPEED 50 //Ir-robot nagħmluh jitħarrek bi PWM ta 75 dejjem. Biex ikun inqas ikkumplikat.
 #define BASE_SPEED_MS 9038
 
-#define ROT_SPEED 60
+#define ROT_SPEED 100
 
-
+#define INC 0.08
+#define INC_ROT 83
 #define FWD 1
 #define BCK 0
 
-#define THRESH 75
+#define THRESH 100
+
+#define WIDTH 12
+#define HEIGHT WIDTH*2
+#define MAX_PATH_LEN 200
 
 
 enum condition_type {COND_NONE, COND_ONLINE, COND_IS_ALIGNED};
-
+enum looking_type {LOOKING_UP, LOOKING_RIGHT, LOOKING_DOWN, LOOKING_LEFT};
 
 class BBI {
   public:
@@ -46,35 +51,47 @@ class BBI {
     void halt();
 
     void adjust();
+    void getPath();
 
-    bool moveFwd(float distance, condition_type condition=COND_NONE);
+    bool moveInc(bool avoid, condition_type condition=COND_NONE);
+    bool rotClockInc(condition_type condition=COND_NONE);
+    bool rotAntiInc(condition_type condition=COND_NONE);
+    
+    bool moveFwd(float distance, condition_type condition=COND_NONE, bool avoid=false);
     void moveMotors(int leftSpeed, int rightSpeed, bool direction=true);
     void moveBlind(int speed, int time, bool direction);
 
     bool evalCondition(condition_type condition=COND_NONE);
+
+    bool addObject();
+    float initial_yaw;
     
     bool isAlignedOnLine();
     bool rotate(int angle, condition_type condition=COND_NONE);
 
     float speedTest(int speed);
     int onLine();
-
+ 
     
     float rl(float init_yaw);
-    int getLntrkLeft();
-    int getLntrkMiddle();
-    int getLntrkRight();
+    uint16_t getLntrkLeft();
+    uint16_t getLntrkMiddle();
+    uint16_t getLntrkRight();
 
-    int getSonicDist();
+    uint16_t getSonicDist();
 
     float getYaw();
 
     MPU6050_getdata mpu;
     bool IR_halt();
 
-    int motorSpeedLeft;
-    int motorSpeedRight;
+    uint16_t x;
+    uint16_t y;
+    looking_type looking;
+    
     float angle;   //Relative to starting orientation.
+    uint8_t grid[HEIGHT][WIDTH];
+
     
   private:
 
