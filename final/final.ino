@@ -1,9 +1,10 @@
 #include "bbi.hpp"
- 
+
 
 BBI bbi;
 int rotate_increment;
 bool polarity;
+int lines = 0;
 
 void setup() {
 
@@ -11,62 +12,94 @@ void setup() {
   Serial.println("!!!!!!!!");
   bbi.power(true); //Power on buqkarus.
   bbi.initMPU(); //Initalise gryoscope.
-//  bbi.moveInc();
+
   rotate_increment = INC_ROT;
   polarity = true;
 
-  delay(1000);
-  bbi.getSonicDist();
-  bbi.getSonicDist();
-  bbi.getSonicDist();
-  bbi.moveInc(false);
+
+  bbi.rotate(-180,COND_ONLINE);
+  bbi.trackLine(1000);
+
+  if (!bbi.evalCondition(COND_ONLINE_LEFT)) {
+      bbi.rotate(1);
+  }
+  
+  if (bbi.getLntrkLeft() > 100) {
+      bbi.rotate(-1);
+      bbi.moveBlind(BASE_SPEED, 1000, BCK);
+      bbi.rotate(90);
+    
+  } else {
+    bbi.rotate(-1);
+    
+  }
+  
+
+    
+   
+  
+
+
+
+
+
     
 }
 
 void loop() {
-  if (bbi.y  >= HEIGHT) {
-    bbi.halt();
-    Serial.println("!!!HeyCharmin");
-    while(1);
-  }
-
   
-  Serial.println(bbi.y);
-
-  if (bbi.onLine() > 100) {
-      bbi.adjust();
-      
-      bbi.halt();
-      while(1);
-      
-    }
-
-//  
-//  if (bbi.getSonicDist() < 10) {
+//  Serial.println(bbi.y);
+//
+//  if (bbi.evalCondition(COND_ONLINE)) {
+//      bbi.adjust();      
+//      bbi.halt();
+//      lines ++;
+//    }
+//
+//  if (lines == 4) {
+//    bbi.halt();
+//    while(1);
+//      
+//  }
+//
+//  if (bbi.getSonicDist() < 15) {
 //
 //    while (bbi.getSonicDist() < 15) {
 //
-//      if (polarity) bbi.rotClockInc();
-//      else bbi.rotAntiInc();
+//      if (polarity) {
+//        bbi.rotClockInc();
+//        bbi.moveInc(true);
+//        bbi.moveInc(true);
+//        bbi.xPos += 2;
+//      }
 //      
-//      bbi.moveInc(true);
-//      bbi.moveInc(true);
-// 
+//      else {
+//        bbi.rotAntiInc();
+//        bbi.moveInc(true);
+//        bbi.moveInc(true);
+//        bbi.xPos -= 2;
+//      }
+//       
 //      if (polarity) bbi.rotAntiInc();
 //      else bbi.rotClockInc();
 //
-//      if (bbi.x >= WIDTH-1 || bbi.x <= 0) {
+//      if (bbi.xPos >= WIDTH-1 || bbi.xPos <= 0) {
+//        Serial.println("SWITCHING DIRECTION");
 //        polarity ^= 1;
 //      }
-//      
 //      
 //    }
 //
 //    polarity ^= 1;
 //    
 //  }
-  
-  bbi.moveInc(false, COND_ONLINE);
+//  
+//  bbi.moveIndef(COND_OBSTACLE, COND_ONLINE);
 
+    Serial.println(bbi.getLntrkLeft());
+
+
+
+  
 
 }

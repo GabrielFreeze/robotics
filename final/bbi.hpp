@@ -34,12 +34,12 @@
 
 #define THRESH 100
 
-#define WIDTH 12
-#define HEIGHT WIDTH*2
+#define WIDTH 13
+#define HEIGHT 24
 #define MAX_PATH_LEN 200
 
 
-enum condition_type {COND_NONE, COND_ONLINE, COND_IS_ALIGNED};
+enum condition_type {COND_NONE, COND_ONLINE, COND_IS_ALIGNED, COND_OBSTACLE, COND_ONLINE_LEFT, COND_ONLINE_RIGHT};
 enum looking_type {LOOKING_UP, LOOKING_RIGHT, LOOKING_DOWN, LOOKING_LEFT};
 
 class BBI {
@@ -53,6 +53,9 @@ class BBI {
     void adjust();
     void getPath();
 
+    void trackLine(float t);
+    
+
     bool moveInc(bool avoid, condition_type condition=COND_NONE);
     bool rotClockInc(condition_type condition=COND_NONE);
     bool rotAntiInc(condition_type condition=COND_NONE);
@@ -60,11 +63,14 @@ class BBI {
     bool moveFwd(float distance, condition_type condition=COND_NONE, bool avoid=false);
     void moveMotors(int leftSpeed, int rightSpeed, bool direction=true);
     void moveBlind(int speed, int time, bool direction);
+    bool moveIndef(condition_type cond1, condition_type cond2);
 
     bool evalCondition(condition_type condition=COND_NONE);
 
     bool addObject();
     float initial_yaw;
+
+    bool isMovingFwd;
     
     bool isAlignedOnLine();
     bool rotate(int angle, condition_type condition=COND_NONE);
@@ -74,19 +80,22 @@ class BBI {
  
     
     float rl(float init_yaw);
-    uint16_t getLntrkLeft();
-    uint16_t getLntrkMiddle();
-    uint16_t getLntrkRight();
+    int getLntrkLeft();
+    int getLntrkMiddle();
+    int getLntrkRight();
 
-    uint16_t getSonicDist();
+    int getSonicDist();
 
     float getYaw();
 
     MPU6050_getdata mpu;
     bool IR_halt();
 
-    uint16_t x;
-    uint16_t y;
+    int x;
+    int y;
+
+    int xPos;
+    int yPos;
     looking_type looking;
     
     float angle;   //Relative to starting orientation.
