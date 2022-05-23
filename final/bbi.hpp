@@ -25,6 +25,9 @@
 #define BASE_SPEED 50 //Ir-robot nagħmluh jitħarrek bi PWM ta 75 dejjem. Biex ikun inqas ikkumplikat.
 #define BASE_SPEED_MS 9038
 
+//#define BASE_SPEED 75
+//#define BASE_SPEED_MS 5711
+
 #define ROT_SPEED 100
 
 #define INC 0.08
@@ -63,7 +66,7 @@ class BBI {
     bool moveFwd(float distance, condition_type condition=COND_NONE, bool avoid=false);
     void moveMotors(int leftSpeed, int rightSpeed, bool direction=true);
     void moveBlind(int speed, int time, bool direction);
-    bool moveIndef(condition_type cond1, condition_type cond2);
+    int moveIndef(condition_type cond1, condition_type cond2);
 
     bool evalCondition(condition_type condition=COND_NONE);
 
@@ -73,7 +76,7 @@ class BBI {
     bool isMovingFwd;
     
     bool isAlignedOnLine();
-    bool rotate(int angle, condition_type condition=COND_NONE);
+    int rotate(int angle, condition_type condition=COND_NONE);
 
     float speedTest(int speed);
     int onLine();

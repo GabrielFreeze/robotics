@@ -33,11 +33,13 @@ BBI::BBI() {
   pinMode(LNTRK_M, INPUT);
   pinMode(LNTRK_R, INPUT);
 
+  pinMode(LED_BUILTIN, OUTPUT);
+
   irrecv.enableIRIn();
 
   isMovingFwd = false;
   looking = LOOKING_UP;
-  xPos = 7;
+  xPos = WIDTH/2;
   y = 0;
 };
 
@@ -61,7 +63,6 @@ int BBI::onLine() {
 
   return max(max(getLntrkLeft(), getLntrkMiddle()), getLntrkRight());
 }
-
 
 void BBI::moveBlind(int speed, int time, bool direction) {
 
@@ -166,38 +167,40 @@ bool BBI::evalCondition(condition_type condition) {
 
 void BBI::trackLine(float t) {
   float start_time = millis();
-    while (millis() < start_time + 1000) {
-     if (getLntrkRight() > 100) {
+    while (millis() < start_time + t) {
+    
+     if (getLntrkMiddle() >= 40) {
+        moveMotors(BASE_SPEED, BASE_SPEED, FWD);
+      
+      } else if (getLntrkRight() > 100) {
         halt();
         rotate(1);
+    
     } else if (getLntrkLeft() > 100) {
         halt();
         rotate(-1);
     } else {
-        moveMotors(BASE_SPEED, BASE_SPEED);  
+      halt();
     }
   }
 
   halt();
 }
 
-bool BBI::moveIndef(condition_type cond1, condition_type cond2) {
+int BBI::moveIndef(condition_type cond1, condition_type cond2) {
   int start_time = millis();
   
   while (!evalCondition(cond2)) {
-
     if (millis()%150 == 0 && evalCondition(cond1)) {
       break;
     }
     
-    moveMotors(BASE_SPEED, BASE_SPEED);
+    moveMotors(BASE_SPEED, BASE_SPEED+10);
   }
 
 
-  Serial.println("STOPPPING!!!");
-
   halt();
-  return true;
+  return millis() - start_time;
 
 }
 
@@ -248,7 +251,7 @@ bool BBI::moveFwd(float distance, condition_type condition, bool avoid) {
 
 }
 
-bool BBI::rotate(int angle, condition_type condition) {
+int BBI::rotate(int angle, condition_type condition) {
 
   //Angle in degrees
 
@@ -272,6 +275,7 @@ bool BBI::rotate(int angle, condition_type condition) {
 
   //Once the angle has been set stop rotating.
   halt();
+  return round(getYaw()) - (yaw_initial + angle);
 }
 
 void BBI::halt() {
@@ -287,8 +291,8 @@ void BBI::adjust() {
 
   moveInc(false);
 
-  rotate(450, COND_ONLINE);
-  rotate(-80);
+  rotate(360, COND_ONLINE);
+  rotate(-70);
 
 
 }
@@ -351,12 +355,12 @@ int BBI::getLntrkRight() {
 }
 
 int BBI::getSonicDist() {
-  Serial.print(hc.dist());
+//  Serial.print(hc.dist());
   if (hc.dist() <= 3) {
-    Serial.println('!');
+//    Serial.println('!');
     return 1000;
   }
-  Serial.println(' ');
+//  Serial.println(' ');
   return hc.dist();
 }
 
