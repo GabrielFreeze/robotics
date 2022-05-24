@@ -1,6 +1,5 @@
 #include "bbi.hpp"
 
-
 BBI bbi;
 int rotate_increment;
 bool turn_right;
@@ -16,7 +15,6 @@ void setup() {
   rotate_increment = INC_ROT;
   turn_right = true;
 
-
   bbi.rotate(-180,COND_ONLINE);
   bbi.trackLine(2000);
   
@@ -26,9 +24,8 @@ void setup() {
       bbi.moveBlind(BASE_SPEED,500,FWD);
     
   }
-
-//  bbi.initial_yaw = bbi.getYaw();
-//  moveFwd_ms = 1000;
+  bbi.initial_yaw = bbi.getYaw();
+  moveFwd_ms = 1000;
     
 }
 
@@ -53,12 +50,13 @@ void loop() {
     }
   }
 
-
+  Serial.println(bbi.xPos);
   //If object in front
-  if (bbi.getSonicDist() < 15) {
-
+  if (bbi.getSonicDist() < 30) {
+  
     //While object in front.
-    while (bbi.getSonicDist() < 15) {
+    while (bbi.getSonicDist() < 30) {
+      Serial.println(bbi.xPos);
 
       if (turn_right) {
         bbi.rotClockInc();
@@ -86,8 +84,8 @@ void loop() {
     }
     
     if (bbi.xPos < WIDTH/2) {
-      turn_right = false;
-    } else turn_right = true;
+      turn_right = true;
+    } else turn_right = false;
 
   }
   

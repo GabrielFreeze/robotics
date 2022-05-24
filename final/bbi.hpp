@@ -37,7 +37,7 @@
 
 #define THRESH 100
 
-#define WIDTH 13
+#define WIDTH 10
 #define HEIGHT 24
 #define MAX_PATH_LEN 200
 
